@@ -28,6 +28,10 @@ namespace Lab2_MPP
             {
                 Console.WriteLine(e.Message);
             }
+            catch (IOException e)
+            {
+                Console.WriteLine(e.Message);
+            }
             finally
             {
                 Console.ReadKey();

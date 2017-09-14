@@ -9,6 +9,8 @@ namespace Lab2_MPP
         private string target_path;
         private int threads_capacity;
 
+        private int copies_file_capacity;
+
         private string Origin_Path
         {
             get
@@ -57,6 +59,7 @@ namespace Lab2_MPP
                 threads_capacity = capacity;
                 Origin_Path = origin;
                 Target_Path = target;
+                copies_file_capacity = 0;
             }
             else
                 throw new DirectoryNotFoundException("Адрес исходного и целевого каталога идентичен.");
@@ -64,13 +67,27 @@ namespace Lab2_MPP
 
         public void Execute()
         {
-            //Выполнение
+            string[] files = Directory.GetFiles(origin_path);
+            foreach (string temp in files)
+            {
+                string tmp = temp.Substring(temp.LastIndexOf("\\"));
+                try
+                {
+                    File.Copy(temp, target_path + temp.Substring(temp.LastIndexOf("\\")));
+                    copies_file_capacity++;
+                }
+                catch(Exception)
+                {
+                    IOException e = new IOException("Файл " + temp.Substring(temp.LastIndexOf("\\")) + " уже существует.");
+                    throw e;
+                }
+                
+            }
         }
 
         public string GetInfo()
         {
-            //Формат вывода
-            return "";
+            return "Из директории " + origin_path + " в директорию " + target_path + " скопировано " + copies_file_capacity + " файлов.";
         }
     }
 }
