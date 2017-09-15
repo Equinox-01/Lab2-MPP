@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 
 namespace Lab2_MPP
 {
@@ -7,9 +8,8 @@ namespace Lab2_MPP
     {
         private string origin_path;
         private string target_path;
-        private int threads_capacity;
 
-        private int copies_file_capacity;
+        private volatile int copies_file_capacity;
 
         private string Origin_Path
         {
@@ -26,7 +26,7 @@ namespace Lab2_MPP
                 else
                 {
                     origin_path = null;
-                    throw new DirectoryNotFoundException("Папка " + value + "не существует");
+                    throw new DirectoryNotFoundException("Папка " + value + " не существует");
                 }
             }
         }
@@ -52,11 +52,10 @@ namespace Lab2_MPP
         }
 
 
-        public ParallelDirCopy(string origin, string target, int capacity)
+        public ParallelDirCopy(string origin, string target)
         {
             if (origin != target)
             {
-                threads_capacity = capacity;
                 Origin_Path = origin;
                 Target_Path = target;
                 copies_file_capacity = 0;
@@ -68,26 +67,50 @@ namespace Lab2_MPP
         public void Execute()
         {
             string[] files = Directory.GetFiles(origin_path);
+            
             foreach (string temp in files)
             {
                 string tmp = temp.Substring(temp.LastIndexOf("\\"));
-                try
+                object outdata = (new CopyInfo(temp, target_path + temp.Substring(temp.LastIndexOf("\\")))) as object;
+                object locker = new object();
+                lock (locker)
                 {
-                    File.Copy(temp, target_path + temp.Substring(temp.LastIndexOf("\\")));
-                    copies_file_capacity++;
+                    ThreadPool.QueueUserWorkItem(CopyData, outdata);
                 }
-                catch(Exception)
-                {
-                    IOException e = new IOException("Файл " + temp.Substring(temp.LastIndexOf("\\")) + " уже существует.");
-                    throw e;
-                }
-                
+            }
+            Thread.Sleep(100);
+        }
+
+        private void CopyData(object indata)
+        {
+            var data = (CopyInfo)indata;
+
+            try
+            {
+                File.Copy(data.origin, data.direction);
+                copies_file_capacity++;
+            }
+            catch (IOException e)
+            {
+                Console.WriteLine(e.Message);
             }
         }
 
         public string GetInfo()
         {
             return "Из директории " + origin_path + " в директорию " + target_path + " скопировано " + copies_file_capacity + " файлов.";
+        }
+
+        public class CopyInfo
+        {
+            public string origin;
+            public string direction;
+
+            public CopyInfo(string origin, string direction)
+            {
+                this.origin = origin;
+                this.direction = direction;
+            }
         }
     }
 }

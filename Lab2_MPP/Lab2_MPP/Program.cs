@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 
 namespace Lab2_MPP
 {
@@ -7,12 +8,15 @@ namespace Lab2_MPP
     {
         static void Main(string[] args)
         {
+            /*string original_dir = Environment.GetCommandLineArgs()[0];
+            string target_dir = Environment.GetCommandLineArgs()[1];*/
+
             string original_dir = "C:\\MPP2\\origin";
             string target_dir = "C:\\MPP2\\target";
-            Console.Write("Количество потоков в пуле - ");
             try
             {
-                var pDirCopy = new ParallelDirCopy(original_dir, target_dir, int.Parse(Console.ReadLine()));
+                var pDirCopy = new ParallelDirCopy(original_dir, target_dir);
+                var mainThread = Thread.CurrentThread;
                 pDirCopy.Execute();
                 Console.WriteLine(pDirCopy.GetInfo());
             }
