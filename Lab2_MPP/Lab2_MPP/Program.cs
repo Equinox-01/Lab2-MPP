@@ -13,10 +13,10 @@ namespace Lab2_MPP
 
             string original_dir = "C:\\MPP2\\origin";
             string target_dir = "C:\\MPP2\\target";
+
             try
             {
                 var pDirCopy = new ParallelDirCopy(original_dir, target_dir);
-                var mainThread = Thread.CurrentThread;
                 pDirCopy.Execute();
                 Console.WriteLine(pDirCopy.GetInfo());
             }
@@ -29,10 +29,6 @@ namespace Lab2_MPP
                 Console.WriteLine("Количество заданно некорректно.");
             }
             catch (DirectoryNotFoundException e)
-            {
-                Console.WriteLine(e.Message);
-            }
-            catch (IOException e)
             {
                 Console.WriteLine(e.Message);
             }

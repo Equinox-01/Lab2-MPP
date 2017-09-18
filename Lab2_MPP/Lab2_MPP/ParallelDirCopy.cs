@@ -1,15 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Lab2_MPP
 {
+    delegate void CopyFolder(DirectoryInfo origin, DirectoryInfo target);
+
     public class ParallelDirCopy
     {
         private string origin_path;
         private string target_path;
-
         private volatile int copies_file_capacity;
+
+        private List<Task> task_list = new List<Task>();
 
         private string Origin_Path
         {
@@ -20,9 +25,7 @@ namespace Lab2_MPP
             set
             {
                 if (Directory.Exists(value))
-                {
                     origin_path = value;
-                }
                 else
                 {
                     origin_path = null;
@@ -40,9 +43,7 @@ namespace Lab2_MPP
             set
             {
                 if (Directory.Exists(value))
-                {
                     target_path = value;
-                }
                 else
                 {
                     target_path = null;
@@ -66,34 +67,28 @@ namespace Lab2_MPP
 
         public void Execute()
         {
-            string[] files = Directory.GetFiles(origin_path);
-            
-            foreach (string temp in files)
-            {
-                string tmp = temp.Substring(temp.LastIndexOf("\\"));
-                object outdata = (new CopyInfo(temp, target_path + temp.Substring(temp.LastIndexOf("\\")))) as object;
-                object locker = new object();
-                lock (locker)
-                {
-                    ThreadPool.QueueUserWorkItem(CopyData, outdata);
-                }
-            }
-            Thread.Sleep(100);
+            CopyFolder(new DirectoryInfo(origin_path), new DirectoryInfo(target_path));
+            for (int i = 0; i < task_list.Count; i++)
+                task_list[i].Wait();
         }
 
-        private void CopyData(object indata)
+        private void CopyFolder(DirectoryInfo origin, DirectoryInfo target)
         {
-            var data = (CopyInfo)indata;
-
-            try
+            if (!Directory.Exists(target.FullName))
+                Directory.CreateDirectory(target.FullName);
+            foreach (var fi in origin.GetFiles())
             {
-                File.Copy(data.origin, data.direction);
-                copies_file_capacity++;
+                if (!File.Exists(Path.Combine(target.ToString(), fi.Name)))
+                {
+                    Console.WriteLine(@"Copying {0}\{1}", target.FullName, fi.Name);
+                    fi.CopyTo(Path.Combine(target.ToString(), fi.Name), true);
+                    copies_file_capacity++;
+                }
+                else
+                    Console.WriteLine("Copying " + target.FullName + fi.Name + " cancelled.\nReason: File already exist.");
             }
-            catch (IOException e)
-            {
-                Console.WriteLine(e.Message);
-            }
+            foreach (DirectoryInfo subDir in origin.GetDirectories())
+                task_list.Add(Task.Run(() => CopyFolder(subDir, target.CreateSubdirectory(subDir.Name))));
         }
 
         public string GetInfo()
